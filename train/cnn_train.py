@@ -19,23 +19,30 @@ if __name__ == "__main__":
     # # 参数 ： 卷积池化后图片的宽高 * 卷积核个数
     # net.create_inputlayer(converter.pro_width * converter.pro_height * converter.kernels_num)
     net.create_inputlayer(28 * 28)
+    net.create_memorylayer(10)
     net.create_outputlayer(10)
-    net.link_inputlayer_outputlayer()
+    #net.link_inputlayer_outputlayer()
 
+    net.link_inputlayer_memorylayer()
+    net.link_memorylayer_outputlayer()
+
+
+    print("train.data:",type(mnist.train.data[1]))
+    # print("train.target:",mnist.train.target[1])
     # 训练
     # 参数 数据集 最多迭代次数 准确率阈值
-    net.train_all(mnist.train.data[:1000], mnist.train.target[:1000], iter_max=4, accuracy_rate=.95)
-    #
-    # # predict
-    accuracy = net.predict_all(mnist.test.data[:10000], mnist.test.target[:10000], record_file="./record/err_msg.csv")
-    print(accuracy)
+    # net.train_all(mnist.train.data[:1000], mnist.train.target[:1000], iter_max=4, accuracy_rate=.95)
+    # #
+    # # # predict
+    # accuracy = net.predict_all(mnist.test.data[:10000], mnist.test.target[:10000], record_file="./record/err_msg.csv")
+    # print(accuracy)
 #    net.save_network_from_file("./record/test.csv")
 
-
-
-    # net.train_all(mnist.train.data[:10], mnist.train.target[:10], iter_max=2, accuracy_rate=.95)
-
-    # # predict
-    # accuracy = net.predict_all(mnist.test.data[:10], mnist.test.target[:10], record_file="../record/err_msg.csv")
     #
-    # net.save_network_from_file("../record/test.csv")
+    #
+    net.train_all(mnist.train.data[:1000], mnist.train.target[:1000], iter_max=4, accuracy_rate=.95)
+
+    # predict
+    accuracy = net.predict_all(mnist.test.data[:1000], mnist.test.target[:1000], record_file="../record/err_msg.csv")
+    print(accuracy)
+    #net.save_network_from_file("../record/test.csv")
