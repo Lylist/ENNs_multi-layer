@@ -45,6 +45,9 @@ class CnnNetwork(NetworkBase):
 
 
         self.__teacher = None
+
+        self.__memoryteacher = None#可能需要
+
         self.__detector = {}
         self.__multimeter = {}
 
@@ -68,6 +71,8 @@ class CnnNetwork(NetworkBase):
         nest.set_verbosity('M_ERROR')
         nest.CopyModel("iaf_psc_alpha", "input_neuron", params={"V_th": -68., "t_ref": 20.})
         nest.CopyModel("iaf_psc_alpha", "output_neuron", params={"V_th": -67., "t_ref": 300.})
+        # 具体参数待调整
+        nest.CopyModel("iaf_psc_alpha", "memory_neuron")
         nest.CopyModel("iaf_psc_alpha", "wn_neuron")
 
     # Create Network
@@ -83,11 +88,21 @@ class CnnNetwork(NetworkBase):
     def __create_input_neuron(*args, **kwargs):
         return nest.Create("input_neuron", *args, **kwargs)
 
+    @staticmethod
+    def __create_memory_neuron(*args, **kwargs):
+        return nest.Create("memory_neuron", *args, **kwargs)
+
     def create_inputlayer(self, *args, **kwargs):
         self.__layer['inputLayer'] = self.__create_input_neuron(*args, **kwargs)
         self.__predictLayer['inputLayer'] = self.__create_input_neuron(*args, **kwargs)
         self.__mark_input()
         return self.__layer['inputLayer']
+
+    def create_memorylayer(self,*args,**kwargs):
+        self.__layer['memoryLayer']=self.__create_memory_neuron(*args, **kwargs)
+        self.__predictLayer['memoryLayer']=self.__create_memory_neuron(*args, **kwargs)
+        self.__mark_memory()
+        return self.__layer['memoryLayer']
 
     def create_outputlayer(self, *args, **kwargs):
         self.__layer['outputLayer'] = self.__create_output_neuron(*args, **kwargs)
@@ -112,6 +127,14 @@ class CnnNetwork(NetworkBase):
     def link_inputlayer_outputlayer_random_w(self, low_w, high_w):
         self.create_random_synapse(self.__layer['inputLayer'], self.__layer['outputLayer'], low_w, high_w, model='stdp_synapse')
         self.create_random_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'], low_w, high_w, model='static_synapse')
+
+    def link_inputlayer_memorylayer(self):
+        self.create_synapse(self.__layer['inputLayer'], self.__layer['memoryLayer'], conn_spec="all_to_all",model='stdp_synapse')
+        self.create_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['memoryLayer'],conn_spec="all_to_all", model="static_synapse")
+
+    def link_memorylayer_outputlayer(self):
+        self.create_synapse(self.__layer['memoryLayer'],self.__layer['outputLayer'],conn_spec="all_to_all",model='stdp_synapse')
+        self.create_synapse(self.__predictLayer['memoryLayer'],self.__predictLayer['outputLayer'],conn_spec="all_to_all", model="static_synapse")
 
 
 
@@ -198,6 +221,35 @@ class CnnNetwork(NetworkBase):
                                 model='static_synapse')
             self.create_synapse(self.__multimeter['outputMultimeter'],
                                 self.__predictLayer['outputLayer'],
+                                conn_spec='all_to_all',
+                                model='static_synapse')
+
+    def __mark_memory(self):
+        if 'memory' in self.__layer.keys():
+            self.__memoryteacher=nest.Create("spike_generator",len(self.__layer['memoryLayer']))
+            #参数存疑
+            self.__detector['memoryDetector']=nest.Create("spike_detector",params={"to_memory": False})
+            self.__multimeter['memoryMultimeter']=nest.Create("multimeter",params={"to_memory": False, 'record_from': ['V_m']})
+
+            self.create_synapse(self.__memoryteacher,
+                                self.__layer['memoryLayer'],
+                                model='static_synapse',
+                                weight=1500.)
+            self.create_synapse(self.__layer['memoryLayer'],
+                                self.__detector['memoryDetector'],
+                                conn_spec='all_to_all',
+                                model='static_synapse')
+            self.create_synapse(self.__multimeter['memoryMultimeter'],
+                                self.__layer['memoryLayer'],
+                                conn_spec='all_to_all',
+                                model='static_synapse')
+
+            self.create_synapse(self.__predictLayer['memoryLayer'],
+                                self.__detector['memoryDetector'],
+                                conn_spec='all_to_all',
+                                model='static_synapse')
+            self.create_synapse(self.__multimeter['memoryMultimeter'],
+                                self.__predictLayer['memoryLayer'],
                                 conn_spec='all_to_all',
                                 model='static_synapse')
 
