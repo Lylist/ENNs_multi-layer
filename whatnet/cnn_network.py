@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 import numpy as np
 import pandas as pd
 
@@ -43,10 +43,9 @@ class CnnNetwork(NetworkBase):
         self.__noise_generator = {}
         self.__predictNoiseGenerator = None
 
-
         self.__teacher = None
 
-        self.__memoryteacher = None#可能需要
+        self.__memoryteacher = None  # 可能需要
 
         self.__detector = {}
         self.__multimeter = {}
@@ -98,9 +97,9 @@ class CnnNetwork(NetworkBase):
         self.__mark_input()
         return self.__layer['inputLayer']
 
-    def create_memorylayer(self,*args,**kwargs):
-        self.__layer['memoryLayer']=self.__create_memory_neuron(*args, **kwargs)
-        self.__predictLayer['memoryLayer']=self.__create_memory_neuron(*args, **kwargs)
+    def create_memorylayer(self, *args, **kwargs):
+        self.__layer['memoryLayer'] = self.__create_memory_neuron(*args, **kwargs)
+        self.__predictLayer['memoryLayer'] = self.__create_memory_neuron(*args, **kwargs)
         self.__mark_memory()
         return self.__layer['memoryLayer']
 
@@ -121,29 +120,36 @@ class CnnNetwork(NetworkBase):
         nest.Connect(pre, pos, conn_spec="all_to_all", syn_spec={'weight': weights.T, 'model': model})
 
     def link_inputlayer_outputlayer(self):
-        self.create_synapse(self.__layer['inputLayer'], self.__layer['outputLayer'], conn_spec="all_to_all", model='stdp_synapse')
-        self.create_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'], conn_spec="all_to_all", model='static_synapse')
+        self.create_synapse(self.__layer['inputLayer'], self.__layer['outputLayer'], conn_spec="all_to_all",
+                            model='stdp_synapse')
+        self.create_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'],
+                            conn_spec="all_to_all", model='static_synapse')
 
     def link_inputlayer_outputlayer_random_w(self, low_w, high_w):
-        self.create_random_synapse(self.__layer['inputLayer'], self.__layer['outputLayer'], low_w, high_w, model='stdp_synapse')
-        self.create_random_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'], low_w, high_w, model='static_synapse')
+        self.create_random_synapse(self.__layer['inputLayer'], self.__layer['outputLayer'], low_w, high_w,
+                                   model='stdp_synapse')
+        self.create_random_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'], low_w, high_w,
+                                   model='static_synapse')
 
     def link_inputlayer_memorylayer(self):
-        self.create_synapse(self.__layer['inputLayer'], self.__layer['memoryLayer'], conn_spec="all_to_all",model='stdp_synapse')
-        self.create_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['memoryLayer'],conn_spec="all_to_all", model="static_synapse")
+        self.create_synapse(self.__layer['inputLayer'], self.__layer['memoryLayer'], conn_spec="all_to_all",
+                            model='stdp_synapse')
+        self.create_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['memoryLayer'],
+                            conn_spec="all_to_all", model="static_synapse")
 
     def link_memorylayer_outputlayer(self):
-        self.create_synapse(self.__layer['memoryLayer'],self.__layer['outputLayer'],conn_spec="all_to_all",model='stdp_synapse')
-        self.create_synapse(self.__predictLayer['memoryLayer'],self.__predictLayer['outputLayer'],conn_spec="all_to_all", model="static_synapse")
-
-
+        self.create_synapse(self.__layer['memoryLayer'], self.__layer['outputLayer'], conn_spec="all_to_all",
+                            model='stdp_synapse')
+        self.create_synapse(self.__predictLayer['memoryLayer'], self.__predictLayer['outputLayer'],
+                            conn_spec="all_to_all", model="static_synapse")
 
     def __mark_input(self):
         if 'inputLayer' in self.__layer.keys():
             self.__generator = nest.Create("spike_generator", len(self.__layer['inputLayer']))
             self.__predictGenerator = nest.Create("spike_generator", len(self.__layer['inputLayer']))
             self.__detector['inputDetector'] = nest.Create("spike_detector", params={"to_memory": False})
-            self.__multimeter['inputMultimeter'] = nest.Create("multimeter", params={"to_memory": False, 'record_from': ['V_m']})
+            self.__multimeter['inputMultimeter'] = nest.Create("multimeter",
+                                                               params={"to_memory": False, 'record_from': ['V_m']})
 
             '''
             # noise connect inputlayer
@@ -184,7 +190,8 @@ class CnnNetwork(NetworkBase):
         if 'outputLayer' in self.__layer.keys():
             self.__teacher = nest.Create("spike_generator", len(self.__layer['outputLayer']))
             self.__detector['outputDetector'] = nest.Create("spike_detector", params={"to_memory": True})
-            self.__multimeter['outputMultimeter'] = nest.Create("multimeter", params={"to_memory": False, 'record_from': ['V_m']})
+            self.__multimeter['outputMultimeter'] = nest.Create("multimeter",
+                                                                params={"to_memory": False, 'record_from': ['V_m']})
 
             '''
             # noise connect outputlayer
@@ -226,10 +233,11 @@ class CnnNetwork(NetworkBase):
 
     def __mark_memory(self):
         if 'memory' in self.__layer.keys():
-            self.__memoryteacher=nest.Create("spike_generator",len(self.__layer['memoryLayer']))
-            #参数存疑
-            self.__detector['memoryDetector']=nest.Create("spike_detector",params={"to_memory": False})
-            self.__multimeter['memoryMultimeter']=nest.Create("multimeter",params={"to_memory": False, 'record_from': ['V_m']})
+            self.__memoryteacher = nest.Create("spike_generator", len(self.__layer['memoryLayer']))
+            # 参数存疑
+            self.__detector['memoryDetector'] = nest.Create("spike_detector", params={"to_memory": False})
+            self.__multimeter['memoryMultimeter'] = nest.Create("multimeter",
+                                                                params={"to_memory": False, 'record_from': ['V_m']})
 
             self.create_synapse(self.__memoryteacher,
                                 self.__layer['memoryLayer'],
@@ -324,7 +332,8 @@ class CnnNetwork(NetworkBase):
         # self.__close_stdp()
         self.__clear_input()
         if not is_predict:
-            self.__update_predict_network(self.__get_connections(self.__layer['inputLayer'], self.__layer['outputLayer']))
+            self.__update_predict_network(
+                self.__get_connections(self.__layer['inputLayer'], self.__layer['outputLayer']))
         image_spikes = self.converter.data(data)
         self.__clear_detector()
         self.__set_predict_input(image_spikes)
@@ -578,8 +587,10 @@ class CnnNetwork(NetworkBase):
         cc_output_dis = min(self.__predictLayer['outputLayer']) - min(self.__layer['outputLayer'])
         for c in cc:
             if abs(c[2] - 1.0) <= change:
-                nest.Disconnect(pre=[c[0]], post=[c[1]], conn_spec={'rule': "one_to_one"}, syn_spec={'model': 'stdp_synapse'})
-                nest.Disconnect(pre=[c[0] + cc_input_dis], post=[c[1] + cc_output_dis], conn_spec={'rule': "one_to_one"}, syn_spec={'model': 'static_synapse'})
+                nest.Disconnect(pre=[c[0]], post=[c[1]], conn_spec={'rule': "one_to_one"},
+                                syn_spec={'model': 'stdp_synapse'})
+                nest.Disconnect(pre=[c[0] + cc_input_dis], post=[c[1] + cc_output_dis],
+                                conn_spec={'rule': "one_to_one"}, syn_spec={'model': 'static_synapse'})
 
     def get_rest_connections_num(self):
         cc = self.__get_connections(self.__layer['inputLayer'], self.__layer['outputLayer'])
