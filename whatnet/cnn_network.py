@@ -232,7 +232,7 @@ class CnnNetwork(NetworkBase):
                                 model='static_synapse')
 
     def __mark_memory(self):
-        if 'memory' in self.__layer.keys():
+        if 'memoryLayer' in self.__layer.keys():
             self.__memoryteacher = nest.Create("spike_generator", len(self.__layer['memoryLayer']))
             # 参数存疑
             self.__detector['memoryDetector'] = nest.Create("spike_detector", params={"to_memory": False})
@@ -287,11 +287,14 @@ class CnnNetwork(NetworkBase):
         times = list(output['times'])
         senders = np.array(sum(self.synchronizer.sync(senders), []))
         times = np.array(sum(self.synchronizer.sync(times), []))
+        memory = self.__get_memory()
 
         # 使用最先激发的作为结果
         min_index = 0
+        # import pdb;pdb.set_trace()
         if len(senders) != 0:
             min_times = min(times)
+            # print(min_times - nest.GetKernelStatus()['time'] + 500.)
             for i, v_time in enumerate(times):
                 if v_time == min_times:
                     min_index = i
@@ -471,6 +474,9 @@ class CnnNetwork(NetworkBase):
 
     def __get_output(self):
         return nest.GetStatus(self.__detector['outputDetector'], 'events')[0]
+
+    def __get_memory(self):
+        return nest.GetStatus(self.__detector['memoryDetector'], 'events')[0]
 
     def __clear_detector(self):
         nest.SetStatus(self.__detector['outputDetector'], {'n_events': 0})
