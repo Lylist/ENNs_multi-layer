@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # # 参数 ： 卷积池化后图片的宽高 * 卷积核个数
     # net.create_inputlayer(converter.pro_width * converter.pro_height * converter.kernels_num)
     net.create_inputlayer(28 * 28)
-    net.create_memorylayer(10)
+    net.create_memorylayer(500)
     net.create_outputlayer(10)
     #net.link_inputlayer_outputlayer()
 
