@@ -131,6 +131,12 @@ class CnnNetwork(NetworkBase):
         self.create_random_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['outputLayer'], low_w, high_w,
                                    model='static_synapse')
 
+    def link_inputlayer_memorylayer_random_w(self, low_w, high_w):
+        self.create_random_synapse(self.__layer['inputLayer'], self.__layer['memoryLayer'], low_w, high_w,
+                                   model='stdp_synapse')
+        self.create_random_synapse(self.__predictLayer['inputLayer'], self.__predictLayer['memoryLayer'], low_w, high_w,
+                                   model='static_synapse')
+
     def link_inputlayer_memorylayer(self):
         self.create_synapse(self.__layer['inputLayer'], self.__layer['memoryLayer'], conn_spec="all_to_all",
                             model='stdp_synapse')
@@ -288,13 +294,13 @@ class CnnNetwork(NetworkBase):
         senders = np.array(sum(self.synchronizer.sync(senders), []))
         times = np.array(sum(self.synchronizer.sync(times), []))
         memory = self.__get_memory()
+        input = self.__get_input()
 
         # 使用最先激发的作为结果
         min_index = 0
-        # import pdb;pdb.set_trace()
         if len(senders) != 0:
             min_times = min(times)
-            # print(min_times - nest.GetKernelStatus()['time'] + 500.)
+            print(min_times - nest.GetKernelStatus()['time'] + 500.)
             for i, v_time in enumerate(times):
                 if v_time == min_times:
                     min_index = i
@@ -336,7 +342,11 @@ class CnnNetwork(NetworkBase):
         self.__clear_input()
         if not is_predict:
             self.__update_predict_network(
-                self.__get_connections(self.__layer['inputLayer'], self.__layer['outputLayer']))
+                self.__get_connections(self.__layer['inputLayer'], self.__layer['memoryLayer']),
+                'inputLayer', 'memoryLayer')
+            self.__update_predict_network(
+                self.__get_connections(self.__layer['memoryLayer'], self.__layer['outputLayer']),
+                'memoryLayer', 'outputLayer')
         image_spikes = self.converter.data(data)
         self.__clear_detector()
         self.__set_predict_input(image_spikes)
@@ -478,6 +488,9 @@ class CnnNetwork(NetworkBase):
     def __get_memory(self):
         return nest.GetStatus(self.__detector['memoryDetector'], 'events')[0]
 
+    def __get_input(self):
+        return nest.GetStatus(self.__detector['inputDetector'], 'events')[0]
+
     def __clear_detector(self):
         nest.SetStatus(self.__detector['outputDetector'], {'n_events': 0})
 
@@ -485,10 +498,10 @@ class CnnNetwork(NetworkBase):
         self.__set_input([np.array([], dtype=np.float)] * len(self.__layer['inputLayer']))
         self.__set_teacher([np.array([], dtype=np.float)] * len(self.__layer['outputLayer']))
 
-    def __update_predict_network(self, conns):
+    def __update_predict_network(self, conns, pre_layer, pro_layer):
         for conn in conns:
-            inv_input = min(self.__predictLayer['inputLayer']) - min(self.__layer['inputLayer'])
-            inv_output = min(self.__predictLayer['outputLayer']) - min(self.__layer['outputLayer'])
+            inv_input = min(self.__predictLayer[pre_layer]) - min(self.__layer[pre_layer])
+            inv_output = min(self.__predictLayer[pro_layer]) - min(self.__layer[pro_layer])
             nest.SetStatus(nest.GetConnections((conn[0] + inv_input,), (conn[1] + inv_output,)), {'weight': conn[2]})
 
     def __open_stdp(self):
