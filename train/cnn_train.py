@@ -19,15 +19,14 @@ if __name__ == "__main__":
     # # 参数 ： 卷积池化后图片的宽高 * 卷积核个数
     # net.create_inputlayer(converter.pro_width * converter.pro_height * converter.kernels_num)
     net.create_inputlayer(28 * 28)
-    net.create_memorylayer(500)
+    net.create_memorylayer(100)
     net.create_outputlayer(10)
     #net.link_inputlayer_outputlayer()
 
-    net.link_inputlayer_memorylayer()
+    net.link_inputlayer_memorylayer_random_w(low_w=1.0, high_w=100.0)
     net.link_memorylayer_outputlayer()
 
-
-    print("train.data:",type(mnist.train.data[1]))
+    print("train.data:", type(mnist.train.data[1]))
     # print("train.target:",mnist.train.target[1])
     # 训练
     # 参数 数据集 最多迭代次数 准确率阈值

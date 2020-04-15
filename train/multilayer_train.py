@@ -65,10 +65,10 @@ if __name__ == "__main__":
         net.set_disconnect_rate(disconnect_w)
         # 参数 ： 卷积池化后图片的宽高 * 卷积核个数
         net.create_inputlayer(converter.pro_width * converter.pro_height * converter.kernels_num)
-        net.create_memorylayer(10)
+        net.create_memorylayer(100)
         net.create_outputlayer(10)
 
-        net.link_inputlayer_memorylayer()
+        net.link_inputlayer_memorylayer_random_w()
         net.link_memorylayer_outputlayer()
         accuracy, index_l = net.train_all_with_result(training_set, target_set, iter_max=2, accuracy_rate=.99)
         all_result.append(net.predict_all_with_result(mnist.test.data[:testing_set_num], mnist.test.target[:testing_set_num]))
